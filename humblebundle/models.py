@@ -14,7 +14,8 @@ class BaseModel(object):
         self._client = client
 
     def __str__(self):
-        return str({key: self.__dict__[key] for key in self.__dict__ if key != '_client'})
+        return str({key: self.__dict__[key]
+                    for key in self.__dict__ if key != '_client'})
 
     def __repr__(self):
         return repr(self.__dict__)
@@ -28,7 +29,9 @@ class Order(BaseModel):
         super(Order, self).__init__(client, data)
         self.product = Product(client, data['product'])
         subscriptions = data.get('subscriptions', [])
-        self.subscriptions = [Subscription(client, sub) for sub in subscriptions] if len(subscriptions) > 0 else None
+        self.subscriptions = [
+            Subscription(client, sub) for sub in subscriptions
+        ] if len(subscriptions) > 0 else None
         self.thankname = data.get('thankname', None)
         self.claimed = data.get('claimed', None)
         self.gamekey = data.get('gamekey', None)
@@ -37,7 +40,8 @@ class Order(BaseModel):
         self.leaderboard = data.get('leaderboard', None)
         self.owner_username = data.get('owner_username', None)
         self.platform = data.get('platform', None)
-        self.subproducts = ([Subproduct(client, prod) for prod in data.get('subproducts', [])]) or None
+        self.subproducts = ([Subproduct(client, prod)
+                             for prod in data.get('subproducts', [])]) or None
 
     def __repr__(self):
         return "Order: <%s>" % self.product.machine_name
@@ -63,20 +67,20 @@ class StoreProduct(BaseModel):
         self.machine_name = data['machine_name']
         self.current_price = Price(client, data['current_price'])
         self.full_price = Price(client, data['full_price'])
-        self.icon = data['storefront_icon'] # URL as string
-        self.platforms = data['platforms'] #linux, windows, mac
-        self.delivery_methods = data['delivery_methods'] # download, steam, origin
-        self.description = data['description'] # HTML
+        self.icon = data['storefront_icon']  # URL as string
+        self.platforms = data['platforms']  # linux, windows, mac
+        # download, steam, origin
+        self.delivery_methods = data['delivery_methods']
+        self.description = data['description']  # HTML
         self.content_types = data['content_types']
-        self.youtube_id = data['youtube_link'] # ID of youtube video
+        self.youtube_id = data['youtube_link']  # ID of youtube video
         self.esrb_rating = data['esrb_rating']
         self.pegi_rating = data['pegi_rating']
-        self.developers = data['developers'] # dictionary
+        self.developers = data['developers']  # dictionary
         self.publishers = data['publishers']
         self.allowed_territories = data['allowed_territories']
         self.minimum_age = data['minimum_age']
-        self.system_requirements = data['system_requirements'] # HTML
-        
+        self.system_requirements = data['system_requirements']  # HTML
 
     def __repr__(self):
         return "StoreProduct: <%s>" % self.machine_name
@@ -99,9 +103,12 @@ class Subproduct(BaseModel):
         self.machine_name = data['machine_name']
         self.payee = Payee(client, data['payee'])
         self.url = data['url']
-        self.downloads = [Download(client, download) for download in data['downloads']]
+        self.downloads = [Download(client, download)
+                          for download in data['downloads']]
         self.human_name = data['human_name']
-        self.custom_download_page_box_html = data['custom_download_page_box_html']
+        self.custom_download_page_box_html = data[
+            'custom_download_page_box_html'
+        ]
         self.icon = data['icon']
 
     def __repr__(self):
@@ -123,13 +130,16 @@ class Download(BaseModel):
         super(Download, self).__init__(client, data)
         self.machine_name = data['machine_name']
         self.platform = data['platform']
-        self.download_struct = [DownloadStruct(client, struct) for struct in data['download_struct']]
+        self.download_struct = [DownloadStruct(client, struct)
+                                for struct in data['download_struct']]
         self.options_dict = data['options_dict']
         self.download_identifier = data['download_identifier']
         self.download_version_number = data['download_version_number']
 
     def sign_download_url(self, *args, **kwargs):
-        return self._client.sign_download_url(self.machine_name, *args, **kwargs)
+        return self._client.sign_download_url(
+            self.machine_name, *args, **kwargs
+        )
 
     def __repr__(self):
         return "Download: <%s>" % self.machine_name
@@ -164,7 +174,7 @@ class Price(BaseModel):
         super(Price, self).__init__(client, data)
         self.value = data[0]
         self.currency = data[1]
-        
+
     def __cmp__(self, other):
         if other.currency == self.currency:
             if self.value < other.value:
@@ -177,4 +187,5 @@ class Price(BaseModel):
             raise NotImplemented("Mixed currencies cannot be compared")
 
     def __repr__(self):
-        return "Price: <{value:.2f}{currency}>".format(value=self.value, currency=self.currency)
+        return "Price: <{value:.2f}{currency}>".format(value=self.value,
+                                                       currency=self.currency)

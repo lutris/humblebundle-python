@@ -7,7 +7,8 @@ from humblebundle import logger
 
 def callback(func):
     """
-    A decorator to add a keyword arg 'callback' to execute a method on the return value of a function
+    A decorator to add a keyword arg 'callback' to execute a method on the
+    return value of a function
 
     Used to add callbacks to the API calls
 
@@ -27,8 +28,9 @@ def callback(func):
 
 def deprecated(func):
     """
-    A decorator which can be used to mark functions as deprecated. It will result in a warning being emitted
-    to the module level logger when the function is used.
+    A decorator which can be used to mark functions as deprecated. It will
+    result in a warning being emitted to the module level logger when the
+    function is used.
     :param func: The deprecated function
     :return: The wrapped function
     """

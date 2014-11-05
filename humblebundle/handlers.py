@@ -6,8 +6,8 @@ __author__ = "Joel Pedraza"
 __copyright__ = "Copyright 2014, Joel Pedraza"
 __license__ = "MIT"
 
-from humblebundle.exceptions import *
-from humblebundle.models import *
+from humblebundle import exceptions
+from humblebundle import models
 
 import itertools
 import requests
@@ -20,7 +20,9 @@ def parse_data(response):
     try:
         return response.json()
     except ValueError as e:
-        raise HumbleParseException("Invalid JSON: %s", str(e), request=response.request, response=response)
+        raise exceptions.HumbleParseException("Invalid JSON: %s", str(e),
+                                              request=response.request,
+                                              response=response)
 
 
 def get_errors(data):
@@ -43,11 +45,16 @@ def authenticated_response_helper(response, data):
 
     # API calls that require login and have a missing or invalid token
     if error_id == 'login_required':
-        raise HumbleAuthenticationException(error_msg, request=response.request, response=response)
+        raise exceptions.HumbleAuthenticationException(
+            error_msg, request=response.request, response=response
+        )
 
-    # Something happened, we're not sure what but we hope the error_msg is useful
+    # Something happened, we're not sure what but we hope the error_msg is
+    # useful
     if success is False or errors is not None or error_id is not None:
-        raise HumbleResponseException(error_msg, request=response.request, response=response)
+        raise exceptions.HumbleResponseException(
+            error_msg, request=response.request, response=response
+        )
 
     # Response had no success or errors fields, it's probably data
     return True
@@ -72,21 +79,29 @@ def login_handler(client, response):
     if errors:
         captcha = errors.get('captcha')
         if captcha:
-            raise HumbleCaptchaException(error_msg, request=response.request, response=response,
-                                         captcha_required=captcha_required, authy_required=authy_required)
+            raise exceptions.HumbleCaptchaException(
+                error_msg, request=response.request, response=response,
+                captcha_required=captcha_required, authy_required=authy_required
+            )
 
         username = errors.get('username')
         if username:
-            raise HumbleCredentialException(error_msg, request=response.request, response=response,
-                                            captcha_required=captcha_required, authy_required=authy_required)
+            raise exceptions.HumbleCredentialException(
+                error_msg, request=response.request, response=response,
+                captcha_required=captcha_required, authy_required=authy_required
+            )
 
         authy_token = errors.get("authy-token")
         if authy_token:
-            raise HumbleTwoFactorException(error_msg, request=response.request, response=response,
-                                           captcha_required=captcha_required, authy_required=authy_required)
+            raise exceptions.HumbleTwoFactorException(
+                error_msg, request=response.request, response=response,
+                captcha_required=captcha_required, authy_required=authy_required
+            )
 
-    raise HumbleAuthenticationException(error_msg, request=response.request, response=response,
-                                        captcha_required=captcha_required, authy_required=authy_required)
+    raise exceptions.HumbleAuthenticationException(
+        error_msg, request=response.request, response=response,
+        captcha_required=captcha_required, authy_required=authy_required
+    )
 
 
 def gamekeys_handler(client, response):
@@ -101,7 +116,9 @@ def gamekeys_handler(client, response):
     authenticated_response_helper(response, data)
 
     # We didn't get a list, or an error message
-    raise HumbleResponseException("Unexpected response body", request=response.request, response=response)
+    raise exceptions.HumbleResponseException(
+        "Unexpected response body", request=response.request, response=response
+    )
 
 
 def order_list_handler(client, response):
@@ -110,26 +127,30 @@ def order_list_handler(client, response):
     data = parse_data(response)
 
     if isinstance(data, list):
-        return [Order(client, order) for order in data]
+        return [models.Order(client, order) for order in data]
 
     # Let the helper function raise any common exceptions
     authenticated_response_helper(response, data)
 
     # We didn't get a list, or an error message
-    raise HumbleResponseException("Unexpected response body", request=response.request, response=response)
+    raise exceptions.HumbleResponseException(
+        "Unexpected response body", request=response.request, response=response
+    )
 
 
 def order_handler(client, response):
     """ order response might be 404 with no body if not found """
 
     if response.status_code == requests.codes.not_found:
-        raise HumbleResponseException("Order not found", request=response.request, response=response)
+        raise exceptions.HumbleResponseException(
+            "Order not found", request=response.request, response=response
+        )
 
     data = parse_data(response)
 
     # The helper function should be sufficient to catch any other errors
     if authenticated_response_helper(response, data):
-        return Order(client, data)
+        return models.Order(client, data)
 
 
 def claimed_entities_handler(client, response):
@@ -150,13 +171,16 @@ def sign_download_url_handler(client, response):
 
     data = parse_data(response)
 
-    # If the request is unauthorized (this includes invalid machine names) this response has it's own error syntax
+    # If the request is unauthorized (this includes invalid machine names) this
+    # response has it's own error syntax
     errors = data.get('_errors', None)
     message = data.get('_message', None)
 
     if errors:
         error_msg = "%s: %s" % (errors, message)
-        raise HumbleResponseException(error_msg, request=response.request, response=response)
+        raise exceptions.HumbleResponseException(
+            error_msg, request=response.request, response=response
+        )
 
     # If the user isn't signed in we get a "typical" error response
     if authenticated_response_helper(response, data):
@@ -165,6 +189,6 @@ def sign_download_url_handler(client, response):
 
 def store_products_handler(client, response):
     """ Takes a results from the store as JSON and converts it to object """
-    
+
     data = parse_data(response)
-    return [StoreProduct(client, result) for result in data['results']]
+    return [models.StoreProduct(client, result) for result in data['results']]
